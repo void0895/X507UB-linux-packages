@@ -46,5 +46,6 @@ jobs:
       with:
         name: kernel_build
         path: |
-         linux-6.8.9/linux-6.8.9.deb
+         linux-image-6.8.9_x86_64.deb
+         linux-image-amd64_6.8.9-1_amd64.deb
          linux-6.8.9/usr/src/
