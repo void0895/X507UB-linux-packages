@@ -1,0 +1,50 @@
+name: Linux Kernel Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download Kernel Source
+      run: |
+        curl -LO https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.8.9.tar.xz
+        tar -xvf linux-6.8.9.tar.xz
+        cd linux-6.8.9 #change dir
+        git clone https://github.com/void0895/X507UB-linux-packages
+        cd X507UB-linux-packages
+        mv .config ../.config
+
+    - name: Install necessary dependencies
+      run: sudo apt-get update && sudo apt-get install -y debhelper-compat=12 build-essential kmod linux-source flex bison dwarves cpio libssl-dev libncurses5-dev libncurses-dev  libelf-dev bc
+
+    - name: Build Kernel
+      run: |
+        cd linux-6.8.9 # Change directory to where your kernel source code is located
+        make -j$(nproc)
+        make modules -j$(nproc)
+        make -j`nproc` bindeb-pkg
+        
+    - name: Zip Kernel Build
+      run: |
+        cd linux-6.8.9 # Change directory to where your kernel source code is located
+        KERNEL_IMAGE=$(find . -name "vmlinuz-*" -type f)
+        SYSTEM_MAP=$(find . -name "System.map" -type f)
+        CONFIG=$(find . -name "config" -type f)
+        MODULES_DIR=$(find . -type d -name "modules")
+        zip -r kernel_build.zip $KERNEL_IMAGE $SYSTEM_MAP $CONFIG $MODULES_DIR/*
+        
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: kernel_build
+        path: |
+         linux-6.8.9/linux-6.8.9.deb
+         linux-6.8.9/usr/src/
